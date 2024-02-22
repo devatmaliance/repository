@@ -3,6 +3,8 @@
 namespace src;
 
 namespace Devatmaliance\Repository;
+
+interface RequestSenderInterface
 {
     public function get(array $params);
     public function post(array $params);
