@@ -1,0 +1,17 @@
+{
+    "name": "devatmaliance/repository",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Devatmaliance\\Repository\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "devatmaliance"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    }
+}
