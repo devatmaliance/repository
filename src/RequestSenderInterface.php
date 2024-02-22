@@ -2,7 +2,7 @@
 
 namespace src;
 
-interface RequestSenderInterface
+namespace Devatmaliance\Repository;
 {
     public function get(array $params);
     public function post(array $params);
