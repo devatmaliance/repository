@@ -8,5 +8,5 @@ interface ActionDTOInterface
     public function getFields(): array;
     public function setOperation(string $operation): void;
     public function setEntity(string $entity): void;
-    public function setFields(array $action): void;
+    public function setFields(array $fields): void;
 }
