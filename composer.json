@@ -11,6 +11,7 @@
             "name": "devatmaliance"
         }
     ],
+    "minimum-stability": "stable",
     "require": {
         "php": ">=7.4"
     }
