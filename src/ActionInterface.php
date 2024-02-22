@@ -1,6 +1,6 @@
 <?php
 
-namespace src;
+namespace Devatmaliance\Repository;
 interface ActionInterface
 {
     public function create(array $fields): void;
