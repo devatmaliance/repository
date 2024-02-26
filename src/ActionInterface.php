@@ -3,8 +3,8 @@
 namespace Devatmaliance\Repository;
 interface ActionInterface
 {
-    public function create(array $fields): array;
-    public function update(int $id, array $fields): array;
-    public function delete(int $id): array;
+    public function create(array $fields): void;
+    public function update(int $id, array $fields): void;
+    public function delete(int $id): void;
     public function getFields(): array;
 }
