@@ -1,6 +1,7 @@
 <?php
 
 namespace Devatmaliance\Repository;
+
 interface ActionDTOInterface
 {
     public function getOperation(): string;
