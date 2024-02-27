@@ -4,5 +4,5 @@ namespace Devatmaliance\Repository;
 
 interface RepositoryClientInterface
 {
-    public function send(ActionInterface $action): void;
+    public function send(ActionInterface $action);
 }
