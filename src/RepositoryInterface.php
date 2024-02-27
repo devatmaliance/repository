@@ -4,7 +4,7 @@ namespace Devatmaliance\Repository;
 
 interface RepositoryInterface
 {
-    public function create(): void;
-    public function update(): void;
-    public function delete(): void;
+    public function create(): array;
+    public function update(): array;
+    public function delete(): array;
 }
