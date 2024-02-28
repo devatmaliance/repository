@@ -2,7 +2,7 @@
 
 namespace Devatmaliance\Repository;
 
-use ActionDTOInterface;
+use Devatmaliance\Repository\ActionDTOInterface;
 
 interface ActionInterface
 {
