@@ -6,10 +6,9 @@ use Devatmaliance\Repository\ActionDTOInterface;
 
 interface ActionInterface
 {
-    public function create(array $fields): void;
-    public function update(array $fields): void;
-    public function delete(array $fileds): void;
+    public function create(array $params): void;
+    public function update(array $params): void;
+    public function delete(array $params): void;
     public function getParams(): array;
-    public function setParams(ActionDTOInterface $actionDTO): void;
     public function getMethod(): string;
 }

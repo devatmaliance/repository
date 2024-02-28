@@ -11,8 +11,8 @@ class Action implements ActionInterface
 
     public function __construct(ActionDTOInterface $actionDTO)
     {
-        $this->$action($fields);
-        $this->setParams($actionDTO);
+        $action = $actionDTO->getOperaton();
+        $this->$action($actionDTO->getParams());
     }
 
     public function getParams(): array
@@ -25,23 +25,21 @@ class Action implements ActionInterface
         return $this->method;        
     }
 
-    private function setParams(ActionDTOInterface $actionDTO): void
+    public function create(array $params): void
     {
-        $this->params = $actionDTO->getParams();
-    }
-
-    private function create(array $fields): void
-    {
+        $this->params = $params;
         $this->method = 'get';
     }
 
-    private function update(array $fields): void
+    public function update(array $params): void
     {
+        $this->params = $params;
         $this->method = 'post';
     }
 
-    private function delete(array $fields): void
+    public function delete(array $params): void
     {
+        $this->params = $params;
         $this->method = 'delete';
     }
 }
