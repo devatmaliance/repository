@@ -715,6 +715,7 @@ class Entity
     {
         $entity = strtolower($entity);
         $entity = substr($entity, strrpos($entity, '\\') + 1, strlen($entity));
-        return in_array($entity, $entities ?? self::getEntities()) ? $entity : null;
+        $entities = $entities ? $entity : self::getEntities();
+        return in_array($entity, $entities) ? $entity : null;
     }
 }
