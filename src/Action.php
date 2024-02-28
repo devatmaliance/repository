@@ -11,7 +11,7 @@ class Action implements ActionInterface
 
     public function __construct(ActionDTOInterface $actionDTO)
     {
-        $action = $actionDTO->getOperaton();
+        $action = $actionDTO->getOperation();
         $this->$action($actionDTO->getParams());
     }
 
