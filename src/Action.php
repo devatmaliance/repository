@@ -2,35 +2,17 @@
 namespace Devatmaliance\Repository;
 
 use ActionInterface;
+use ActionDTOInterface;
 
 class Action implements ActionInterface
 {
-
-    private string $entity;
     private array $params = [];
     private string $method = 'get';
-    public function __construct(string $entity)
-    {
-        $this->entity = $entity;
-    }
 
-    public function create(array $fields): void
+    public function __construct(ActionDTOInterface $actionDTO)
     {
-        $fields = array_filter($fields, fn($field) => $field !== null);
-        $this->params = ['operation' => \Devatmaliance\Repository\Action::CREATE, 'entity' => $this->entity, 'fields' => [$fields]];
-        $this->method = 'get';
-    }
-
-    public function update(int $id, array $fields): void
-    {
-        $this->params = ['operation' => \Devatmaliance\Repository\Action::UPDATE, 'entity' => $this->entity, 'fields' => [array_merge(['id' => $id],$fields)]];
-        $this->method = 'post';
-    }
-
-    public function delete(int $id): void
-    {
-        $this->params = ['operation' => \Devatmaliance\Repository\Action::DELETE, 'entity' => $this->entity, 'fields' => [['id' => $id]]];
-        $this->method = 'delete';
+        $this->$action($fields);
+        $this->setParams($actionDTO);
     }
 
     public function getParams(): array
@@ -41,5 +23,25 @@ class Action implements ActionInterface
     public function getMethod(): string
     {
         return $this->method;        
+    }
+
+    private function setParams(ActionDTOInterface $actionDTO): void
+    {
+        $this->params = $actionDTO->getParams();
+    }
+
+    private function create(array $fields): void
+    {
+        $this->method = 'get';
+    }
+
+    private function update(array $fields): void
+    {
+        $this->method = 'post';
+    }
+
+    private function delete(array $fields): void
+    {
+        $this->method = 'delete';
     }
 }
