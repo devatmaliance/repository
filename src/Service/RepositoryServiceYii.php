@@ -14,7 +14,7 @@ class RepositoryServiceYii implements RepositoryServiceInterface
     private RepositoryInterface $repository;
     private RepositoryEntityInterface $repositoryEntity;
     private ?ServiceReceiverMapperDTOInterface $mapperDTO;
-    private string $body;
+    private \stdClass $body;
 
     public function __construct(
         string $body,
