@@ -1,6 +1,8 @@
 <?php
 
-namespace Devatmaliance\Repository;
+namespace Devatmaliance\Repository\Action;
+
+use Devatmaliance\Repository\Service\ServiceReceiverMapperDTOInterface;
 
 interface ActionDTOInterface
 {
@@ -13,4 +15,5 @@ interface ActionDTOInterface
     public function setEntity(string $entity): void;
     public function setFields(array $fields): void;
     public function setSearchParam(string $param): void;
+    public function initDTO(\stdClass $source, ?ServiceReceiverMapperDTOInterface $mapperDTO): void;
 }

@@ -1,7 +1,5 @@
 <?php
 
-namespace src;
-
 namespace Devatmaliance\Repository;
 
 interface RequestSenderInterface

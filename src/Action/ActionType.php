@@ -1,6 +1,6 @@
 <?php
 
-namespace Devatmaliance\Repository;
+namespace Devatmaliance\Repository\Action;
 
 class ActionType
 {
