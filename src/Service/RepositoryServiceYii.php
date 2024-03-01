@@ -8,7 +8,7 @@ use Devatmaliance\Repository\Repository\RepositoryInterface;
 use Devatmaliance\Repository\Service\RepositoryServiceInterface;
 use Devatmaliance\Repository\Service\ServiceReceiverMapperDTOInterface;
 
-class RepositoryServiceYii implements RepositoryServiceInterface
+class RepositoryService implements RepositoryServiceInterface
 {
     private ActionDTOInterface $actionDTO;
     private RepositoryInterface $repository;
