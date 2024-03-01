@@ -25,12 +25,21 @@ class RepositoryYii implements RepositoryInterface
     public function create(): array
     {
         $entity = $this->actionDTO->getEntity();
-        $this->assertEntity($entity);
+
+        if (!$this->isEntityExists($entity)) {
+            return [];
+        }
+        
         $classEntity = $this->repositoryEntity->entities()[$entity];
         $models = [];
 
         foreach ($this->actionDTO->getFields() as $fields) {
             $fields = $this->convertToArray($fields);
+
+            if ($model = $this->getModel($fields)) {
+                return $model->getAttributes();
+            }
+
             $model = new $classEntity($fields);
             $model->setScenario(self::SCENARIO);
             $this->saveModel($model);
@@ -52,6 +61,9 @@ class RepositoryYii implements RepositoryInterface
             $fields = $this->convertToArray($fields);
             $this->assertSearchParamNotEmpty($fields);
             $model = $this->getModel($fields);
+            
+            if (!$model) return [];
+            
             $model->setScenario(self::SCENARIO);
             $model->setAttributes($fields);
             $this->saveModel($model);
@@ -70,6 +82,9 @@ class RepositoryYii implements RepositoryInterface
             $fields = $this->convertToArray($fields);
             $this->assertSearchParamNotEmpty($fields);
             $model = $this->getModel($fields);
+
+            if (!$model) return [];
+
             $model->setScenario(self::SCENARIO);
             $this->deleteModel($model);
         }
@@ -105,11 +120,9 @@ class RepositoryYii implements RepositoryInterface
         }
     }
 
-    private function assertEntity(string $entity): void
+    private function isEntityExists(string $entity): bool
     {
-        if (!isset($this->repositoryEntity->entities()[$entity])) {
-            throw new \InvalidArgumentException("Сущность $entity отстутствует в списке");
-        }
+        return isset($this->repositoryEntity->entities()[$entity]);
     }
 
     /**
@@ -119,12 +132,15 @@ class RepositoryYii implements RepositoryInterface
     {
         $entity = $this->actionDTO->getEntity();
         $searchParam = $this->actionDTO->getSearchParam();
-        $this->assertEntity($entity);
+        
+        if (!$this->isEntityExists($entity)) {
+            return null;
+        }
 
         $classEntity = $this->repositoryEntity->entities()[$entity];
 
         if (!$model = $classEntity->findOne([$searchParam => $fields[$searchParam]])) {
-            throw new Exception("Сущность $entity по полю $searchParam с значением $fields[$searchParam] не найдена");
+            return null; 
         }
 
         return $model;
