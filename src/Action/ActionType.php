@@ -9,7 +9,7 @@ class ActionType
     public const DELETE = 'delete';
     public const GET = 'get';
 
-    public function getTypes(): array
+    public static function getTypes(): array
     {
         return [
             self::CREATE,
