@@ -28,7 +28,7 @@ class Action implements ActionInterface
     public function create(array $params): void
     {
         $this->params = $params;
-        $this->method = 'get';
+        $this->method = 'post';
     }
 
     public function update(array $params): void
@@ -42,4 +42,5 @@ class Action implements ActionInterface
         $this->params = $params;
         $this->method = 'delete';
     }
+
 }
