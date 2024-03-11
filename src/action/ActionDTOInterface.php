@@ -1,6 +1,6 @@
 <?php
 
-namespace Devatmaliance\Repository\Action;
+namespace Devatmaliance\Repository\action;
 
 use Devatmaliance\Repository\Service\ServiceReceiverMapperDTOInterface;
 

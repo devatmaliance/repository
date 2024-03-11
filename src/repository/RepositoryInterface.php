@@ -1,9 +1,9 @@
 <?php
 
-namespace Devatmaliance\Repository\Repository;
+namespace Devatmaliance\Repository\repository;
 
-use Devatmaliance\Repository\Repository\RepositoryEntityInterface;
-use Devatmaliance\Repository\Action\ActionDTOInterface;
+use Devatmaliance\Repository\repository\RepositoryEntityInterface;
+use Devatmaliance\Repository\action\ActionDTOInterface;
 
 interface RepositoryInterface
 {

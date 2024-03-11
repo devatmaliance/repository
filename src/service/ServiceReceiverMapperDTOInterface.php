@@ -1,6 +1,6 @@
 <?php
 
-namespace Devatmaliance\Repository\Service;
+namespace Devatmaliance\Repository\service;
 
 interface ServiceReceiverMapperDTOInterface
 {

@@ -1,12 +1,12 @@
 <?php
 
-namespace Devatmaliance\Repository\Service;
+namespace Devatmaliance\Repository\service;
 
-use Devatmaliance\Repository\Action\ActionDTOInterface;
-use Devatmaliance\Repository\Repository\RepositoryEntityInterface;
-use Devatmaliance\Repository\Repository\RepositoryInterface;
-use Devatmaliance\Repository\Service\RepositoryServiceInterface;
-use Devatmaliance\Repository\Service\ServiceReceiverMapperDTOInterface;
+use Devatmaliance\Repository\action\ActionDTOInterface;
+use Devatmaliance\Repository\repository\RepositoryEntityInterface;
+use Devatmaliance\Repository\repository\RepositoryInterface;
+use Devatmaliance\Repository\service\RepositoryServiceInterface;
+use Devatmaliance\Repository\service\ServiceReceiverMapperDTOInterface;
 
 class RepositoryService implements RepositoryServiceInterface
 {

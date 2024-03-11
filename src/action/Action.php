@@ -1,8 +1,8 @@
 <?php
-namespace Devatmaliance\Repository\Action;
+namespace Devatmaliance\Repository\action;
 
-use Devatmaliance\Repository\Action\ActionInterface;
-use Devatmaliance\Repository\Action\ActionDTOInterface;
+use Devatmaliance\Repository\action\ActionInterface;
+use Devatmaliance\Repository\action\ActionDTOInterface;
 
 class Action implements ActionInterface
 {

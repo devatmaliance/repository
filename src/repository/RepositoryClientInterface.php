@@ -1,8 +1,8 @@
 <?php
 
-namespace Devatmaliance\Repository\Repository;
+namespace Devatmaliance\Repository\repository;
 
-use Devatmaliance\Repository\Action\ActionInterface;
+use Devatmaliance\Repository\action\ActionInterface;
 
 interface RepositoryClientInterface
 {

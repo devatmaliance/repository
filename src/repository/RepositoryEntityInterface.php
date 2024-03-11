@@ -1,6 +1,6 @@
 <?php
 
-namespace Devatmaliance\Repository\Repository;
+namespace Devatmaliance\Repository\repository;
 
 interface RepositoryEntityInterface
 {
