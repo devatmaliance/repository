@@ -1,6 +1,6 @@
 <?php
 
-namespace console\components\dump_parser;
+namespace Devatmaliance\Repository\dump_parser;
 
 class SqlFileHandler
 {
