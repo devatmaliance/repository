@@ -3,12 +3,12 @@
 namespace Devatmaliance\Repository\dump_parser;
 
 use Devatmaliance\Repository\dump_parser\SqlDumpActionInterface;
-use Devatmaliance\Repository\dump_parser\SqlDumpCommand;
+use Devatmaliance\Repository\dump_parser\MysqlDumpCommand;
 
-class SqlDumpAction implements SqlDumpActionInterface
+class MysqlDumpAction implements SqlDumpActionInterface
 {
 
-    private SqlDumpCommand $sqlDumpCommand;
+    private MysqlDumpCommand $sqlDumpCommand;
     private array $config;
 
     private array $usedColumns = [];
@@ -18,33 +18,10 @@ class SqlDumpAction implements SqlDumpActionInterface
     private bool $isEmptyConfigTablePropertiesFields = true;
     private string $bufferContent = '';
 
-    public function __construct(SqlDumpCommand $sqlDumpCommand, array $config)
+    public function __construct(MysqlDumpCommand $sqlDumpCommand, array $config)
     {
         $this->sqlDumpCommand = $sqlDumpCommand;
         $this->config = $config;
-    }
-
-    public function execute(array $buffer): string
-    {
-        $this->setBuffer($buffer);
-
-        if ($this->sqlDumpCommand->isDropTable($this->bufferContent)) {
-            return $this->drop();
-        }
-        if ($this->sqlDumpCommand->isCreateTable($this->bufferContent)) {
-            return $this->create();
-        }
-        if ($this->sqlDumpCommand->isLockTable($this->bufferContent)) {
-            return $this->lock();
-        }
-        if ($this->sqlDumpCommand->isInsertInto($this->bufferContent)) {
-            return $this->insert();
-        }
-        if ($this->sqlDumpCommand->isUnLockTable($this->bufferContent)) {
-            return $this->unlock();
-        }
-
-        return '';
     }
 
     public function drop(): string
@@ -55,9 +32,7 @@ class SqlDumpAction implements SqlDumpActionInterface
             return '';
         }
 
-        $this->sqlTableName = $sqlTableName;
-        $this->tableProperties = $this->config['tables'][$this->sqlTableName];
-        $this->isEmptyConfigTablePropertiesFields = empty($this->tableProperties['fields']);
+        $this->setProperties($sqlTableName);
 
         return $this->replaceSqlTableName($this->bufferContent, $sqlTableName);
     }
@@ -70,6 +45,7 @@ class SqlDumpAction implements SqlDumpActionInterface
             return '';
         }
 
+        $this->setProperties($sqlTableName);
         return $this->replaceSqlTableName($this->bufferContent, $sqlTableName);
     }
 
@@ -102,7 +78,7 @@ class SqlDumpAction implements SqlDumpActionInterface
 
             if (empty($sqlField)) {
                 $temporaryBuffer .= $this->sqlDumpCommand->addPrimaryKey($line);
-                $temporaryBuffer .= $this->sqlDumpCommand->addByPattern($line, SqlDumpCommand::ENGINE_INNODB_PATTERN);
+                $temporaryBuffer .= $this->sqlDumpCommand->addByPattern($line, MysqlDumpCommand::ENGINE_INNODB_PATTERN);
             } else {
                 if (isset($this->tableProperties['fields'][$sqlField])) {
                     $line = $this->sqlDumpCommand->renameSqlField($line, $sqlField, $this->tableProperties);
@@ -131,7 +107,7 @@ class SqlDumpAction implements SqlDumpActionInterface
             return $this->replaceSqlTableName($this->bufferContent, $sqlTableName);
         }
 
-        $temporaryBuffer = SqlDumpCommand::INSERT_INTO_PATTERN . '`' . $this->tableProperties['table'] . '` VALUES ';
+        $temporaryBuffer = MysqlDumpCommand::INSERT_INTO_PATTERN . '`' . $this->tableProperties['table'] . '` VALUES ';
         $sqlInsertValuesRows = $this->sqlDumpCommand->findSqlInsertValues($this->bufferContent);
 
         if (!$sqlInsertValuesRows) {
@@ -191,6 +167,37 @@ class SqlDumpAction implements SqlDumpActionInterface
         $this->bufferContent = rtrim(trim(implode(' ', $buffer)), '\n');
     }
 
+    public function createStructure(array $buffer): string
+    {
+        $this->setBuffer($buffer);
+
+        if ($this->sqlDumpCommand->isDropTable($this->bufferContent)) {
+            return $this->drop();
+        }
+        if ($this->sqlDumpCommand->isCreateTable($this->bufferContent)) {
+            return $this->create();
+        }
+
+        return '';
+    }
+
+    public function insertData(array $buffer): string
+    {
+        $this->setBuffer($buffer);
+
+        if ($this->sqlDumpCommand->isLockTable($this->bufferContent)) {
+            return $this->lock();
+        }
+        if ($this->sqlDumpCommand->isInsertInto($this->bufferContent)) {
+            return $this->insert();
+        }
+        if ($this->sqlDumpCommand->isUnLockTable($this->bufferContent)) {
+            return $this->unlock();
+        }
+
+        return '';
+    }
+
     private function replaceSqlTableName(string $content, string $sqlTableName): string
     {
         return $this->sqlDumpCommand->replaceSqlTableName($content, $sqlTableName, $this->tableProperties);
@@ -205,5 +212,12 @@ class SqlDumpAction implements SqlDumpActionInterface
         }
 
         return $values;
+    }
+
+    private function setProperties(string $sqlTableName): void
+    {
+        $this->sqlTableName = $sqlTableName;
+        $this->tableProperties = $this->config['tables'][$this->sqlTableName];
+        $this->isEmptyConfigTablePropertiesFields = empty($this->tableProperties['fields']);
     }
 }

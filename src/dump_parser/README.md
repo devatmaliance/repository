@@ -40,7 +40,12 @@ SQL DUMP PARSER - парсер дампа мастер таблиц в микр�
 ];
 
 
-// Создаем new SqlDumpParser, передаем нужные значение и вызываем parse, получаем новый дамп, используем в микросервисах
-3) $ouput = "/app/output.sql";
-$parser = new SqlDumpParser($sql, new SqlDumpAction(new SqlDumpCommand, $config), new SqlFileHandler($output));
-$parser->parse();
+// Создаем new MysqlDumpParser, передаем нужные значение, 
+// Устанавливаем sqlFileHandler для parseСreateStructure, после для parseInsertData, получаем 2 дампа, используем в микросервисах
+
+3)  $parser = new MysqlDumpParser($sql, new MysqlDumpAction(new MysqlDumpCommand, $config));
+    $parser->setSqlFileHandler(new SqlFileHandler(\Yii::getAlias('@console/runtime/create_structure.sql')));
+    $parser->parseCreateStructure();
+
+    $parser->setSqlFileHandler(new SqlFileHandler(\Yii::getAlias('@console/runtime/insert_data.sql')));
+    $parser->parseInsertData();

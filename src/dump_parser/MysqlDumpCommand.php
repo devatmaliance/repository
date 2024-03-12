@@ -2,7 +2,9 @@
 
 namespace Devatmaliance\Repository\dump_parser;
 
-class SqlDumpCommand
+use  Devatmaliance\Repository\dump_parser\SqlDumpCommandInterface;
+
+class MysqlDumpCommand implements SqlDumpCommandInterface
 {
     public const CREATE_TABLE_PATTERN = 'CREATE TABLE';
     public const DROP_TABLE_PATTERN = 'DROP TABLE';
