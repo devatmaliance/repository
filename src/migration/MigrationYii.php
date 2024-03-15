@@ -42,12 +42,23 @@ class MigrationYii implements MigrationInterface
     {
         $functions = <<<'EOF'
 {
-    public function saveUp()
+    public function safeUp()
     {
-        $sqlFiles = ["@console/runtime/create_structure.sql", "@console/runtime/insert_data.sql"];
-        foreach ($sqlFiles as $sqlFile) {
-            $sql = file_get_contents(Yii::getAlias($sqlFile));
+        try {
+            $this->execute('SET FOREIGN_KEY_CHECKS=0;');
+            $sql = file_get_contents(Yii::getAlias("@console/runtime/create_structure.sql"));
             $this->execute($sql);
+            $this->execute('SET FOREIGN_KEY_CHECKS=1;');
+
+            $this->execute('LOCK TABLES migration WRITE;');
+            $this->execute('SET FOREIGN_KEY_CHECKS=0;');
+            $sql = file_get_contents(Yii::getAlias("@console/runtime/insert_data.sql"));
+            $this->execute($sql);
+            $this->execute('SET FOREIGN_KEY_CHECKS=1;');
+            $this->execute('UNLOCK TABLES;');
+            
+        } catch (\Exception $e) {
+            throw new \Exception($e);
         }
     }
 

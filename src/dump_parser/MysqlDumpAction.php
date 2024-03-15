@@ -13,10 +13,10 @@ class MysqlDumpAction implements SqlDumpActionInterface
 
     private array $usedColumns = [];
     private array $buffer = [];
-    private string $sqlTableName = '';
     private array $tableProperties = [];
     private bool $isEmptyConfigTablePropertiesFields = true;
     private string $bufferContent = '';
+    private string $sqlTableName = '';
 
     public function __construct(MysqlDumpCommand $sqlDumpCommand, array $config)
     {
@@ -26,7 +26,7 @@ class MysqlDumpAction implements SqlDumpActionInterface
 
     public function drop(): string
     {
-        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent);
+        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent, MysqlDumpCommand::DROP_TABLE_PATTERN);
 
         if (!$this->isConfigTableExists($sqlTableName)) {
             return '';
@@ -39,13 +39,14 @@ class MysqlDumpAction implements SqlDumpActionInterface
 
     public function lock(): string
     {
-        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent);
+        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent, MysqlDumpCommand::LOCK_TABLE_PATTERN);
 
         if (!$this->isConfigTableExists($sqlTableName)) {
             return '';
         }
 
         $this->setProperties($sqlTableName);
+
         return $this->replaceSqlTableName($this->bufferContent, $sqlTableName);
     }
 
@@ -56,7 +57,7 @@ class MysqlDumpAction implements SqlDumpActionInterface
 
     public function create(): string
     {
-        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent);
+        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent, MysqlDumpCommand::CREATE_TABLE_PATTERN);
         $temporaryBuffer = '';
 
         if (!$this->isConfigTableExists($sqlTableName)) {
@@ -77,27 +78,42 @@ class MysqlDumpAction implements SqlDumpActionInterface
             $sqlField = $this->sqlDumpCommand->findSqlField($line);
 
             if (empty($sqlField)) {
-                $temporaryBuffer .= $this->sqlDumpCommand->addPrimaryKey($line);
-                $temporaryBuffer .= $this->sqlDumpCommand->addByPattern($line, MysqlDumpCommand::ENGINE_INNODB_PATTERN);
+                $sqlField = $this->sqlDumpCommand->findSqlFieldInKeyAndConstraint($line);
+
+                if ($this->checkIfFieldInConfigFields($sqlField)) {
+                    $line = $this->sqlDumpCommand->renameSqlField($line, $sqlField, $this->tableProperties);
+                    if ($renamed = $this->findAndRenameTableInConstraint($line)) {
+                        $temporaryBuffer .= $renamed;
+                    } else {
+                        $temporaryBuffer .= $line;
+                    }
+                }
+
+                if (!empty($line = $this->sqlDumpCommand->addByPattern($line, MysqlDumpCommand::ENGINE_INNODB_PATTERN))) {
+                    $temporaryBuffer = rtrim($temporaryBuffer, ',');
+                    $temporaryBuffer .= $line;
+                }
+
             } else {
                 if (isset($this->tableProperties['fields'][$sqlField])) {
                     $line = $this->sqlDumpCommand->renameSqlField($line, $sqlField, $this->tableProperties);
                     $line = $this->sqlDumpCommand->removeAutoIncrement($line, $this->tableProperties);
-                    $this->usedColumns[$this->sqlTableName][] = true;
+                    $this->usedColumns[$sqlTableName][] = true;
 
                     $temporaryBuffer .= $line;
 
                 } else {
-                    $this->usedColumns[$this->sqlTableName][] = false;
+                    $this->usedColumns[$sqlTableName][] = false;
                 }
             }
         }
+
         return $temporaryBuffer;
     }
 
     public function insert(): string
     {
-        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent);
+        $sqlTableName = $this->sqlDumpCommand->findSqlTableName($this->bufferContent, MysqlDumpCommand::INSERT_INTO_PATTERN);
 
         if (!$this->isConfigTableExists($sqlTableName)) {
             return '';
@@ -108,6 +124,9 @@ class MysqlDumpAction implements SqlDumpActionInterface
         }
 
         $temporaryBuffer = MysqlDumpCommand::INSERT_INTO_PATTERN . '`' . $this->tableProperties['table'] . '` VALUES ';
+
+        $this->removeCommasBetweenSingleQuotes($sqlTableName);
+
         $sqlInsertValuesRows = $this->sqlDumpCommand->findSqlInsertValues($this->bufferContent);
 
         if (!$sqlInsertValuesRows) {
@@ -115,7 +134,7 @@ class MysqlDumpAction implements SqlDumpActionInterface
         }
 
         foreach ($sqlInsertValuesRows as $count => $values) {
-            $values = $this->removeCommaAsLastSymbol($values);
+            $values = $this->removeNotAllowedSymbols($values);
             $valuesArray = explode(',', $values);
 
             $normalizedValues = [];
@@ -124,7 +143,7 @@ class MysqlDumpAction implements SqlDumpActionInterface
             $startIndex = 0;
             $index = 0;
 
-            foreach ($valuesArray as $value) {
+            foreach ($valuesArray as $row => $value) {
                 if (preg_match("/^'[^']+$/", $value)) {
                     $isStartOfSplittedLine = true;
                     $startIndex = $index;
@@ -135,7 +154,12 @@ class MysqlDumpAction implements SqlDumpActionInterface
                     $index++;
                 }
 
-                if ($isStartOfSplittedLine || $isEndOfSplittedLine) {
+                if (strlen($value) === 1 && str_contains("'", $value)) {
+                    if ($value === $valuesArray[$row + 1]) {
+                        $normalizedValues[] = "''";
+                        $index++;
+                    }
+                } else if ($isStartOfSplittedLine || $isEndOfSplittedLine) {
                     isset($normalizedValues[$startIndex]) ? $normalizedValues[$startIndex] .= $value : $normalizedValues[$startIndex] = $value;
                     $isEndOfSplittedLine = false;
                 } else {
@@ -145,7 +169,7 @@ class MysqlDumpAction implements SqlDumpActionInterface
             }
 
             foreach ($normalizedValues as $index => $value) {
-                if ($this->usedColumns[$this->sqlTableName][$index] === false) {
+                if ($this->usedColumns[$sqlTableName][$index] === false) {
                     unset($normalizedValues[$index]);
                 }
             }
@@ -153,6 +177,7 @@ class MysqlDumpAction implements SqlDumpActionInterface
             $temporaryBuffer .= '(' . implode(',', $normalizedValues) . ')';
             $temporaryBuffer .= (count($sqlInsertValuesRows) === ($count + 1)) ? ';' : ',';
         }
+
         return $temporaryBuffer;
     }
 
@@ -188,9 +213,11 @@ class MysqlDumpAction implements SqlDumpActionInterface
         if ($this->sqlDumpCommand->isLockTable($this->bufferContent)) {
             return $this->lock();
         }
+
         if ($this->sqlDumpCommand->isInsertInto($this->bufferContent)) {
             return $this->insert();
         }
+
         if ($this->sqlDumpCommand->isUnLockTable($this->bufferContent)) {
             return $this->unlock();
         }
@@ -198,17 +225,33 @@ class MysqlDumpAction implements SqlDumpActionInterface
         return '';
     }
 
-    private function replaceSqlTableName(string $content, string $sqlTableName): string
+    private function replaceSqlTableName(string $content, string $sqlTableName, array $tableProperties = []): string
     {
-        return $this->sqlDumpCommand->replaceSqlTableName($content, $sqlTableName, $this->tableProperties);
+        $tableProperties = $tableProperties ? $tableProperties : $this->tableProperties;
+        return $this->sqlDumpCommand->replaceSqlTableName($content, $sqlTableName, $tableProperties);
     }
-
-    private function removeCommaAsLastSymbol($values): string
+    private function removeCommasBetweenSingleQuotes(): void
     {
-        preg_match_all("/'(.*?)'/", $values, $matches);
+        preg_match_all("/'(.*?)'[),]/", $this->bufferContent, $matches);
 
         foreach ($matches[1] as $line) {
-            $values = str_replace($line, rtrim(trim($line), ','), $values);
+            if (strlen($line) === 1 && str_contains(',', $line)) {
+                continue;
+            }
+            $this->bufferContent = str_replace($line, str_replace([',', ';'], ' ', $line), $this->bufferContent);
+        }
+    }
+
+    private function removeNotAllowedSymbols($values): string
+    {
+        $values = str_replace("\'", '', $values);
+
+        preg_match_all("/'(.*?)'/", $values, $matches);
+        foreach ($matches[1] as $line) {
+            if (strlen($line) === 1 && str_contains(',', $line)) {
+                continue;
+            }
+            $values = str_replace($line, trim($line, " ,"), $values);
         }
 
         return $values;
@@ -217,7 +260,21 @@ class MysqlDumpAction implements SqlDumpActionInterface
     private function setProperties(string $sqlTableName): void
     {
         $this->sqlTableName = $sqlTableName;
-        $this->tableProperties = $this->config['tables'][$this->sqlTableName];
+        $this->tableProperties = $this->config['tables'][$sqlTableName];
         $this->isEmptyConfigTablePropertiesFields = empty($this->tableProperties['fields']);
+    }
+
+    private function checkIfFieldInConfigFields(string $field): bool
+    {
+        return isset($this->tableProperties['fields'][$field]);
+    }
+
+    private function findAndRenameTableInConstraint(string $line): ?string
+    {
+        if ($sqlTableName = $this->sqlDumpCommand->findTableNameInConstraint($line)) {
+            $tableProperties = $this->config['tables'][$sqlTableName] ?? [];
+            return $this->replaceSqlTableName($line, $sqlTableName, $tableProperties);
+        }
+        return null;
     }
 }
