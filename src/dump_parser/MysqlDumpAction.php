@@ -119,6 +119,8 @@ class MysqlDumpAction implements SqlDumpActionInterface
             return '';
         }
 
+        $this->setProperties($sqlTableName);
+
         if ($this->isEmptyConfigTablePropertiesFields) {
             return $this->replaceSqlTableName($this->bufferContent, $sqlTableName);
         }
