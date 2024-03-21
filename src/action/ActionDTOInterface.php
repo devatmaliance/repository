@@ -2,7 +2,7 @@
 
 namespace Devatmaliance\Repository\action;
 
-use Devatmaliance\Repository\Service\ServiceReceiverMapperDTOInterface;
+use Devatmaliance\Repository\service\ServiceReceiverMapperDTOInterface;
 
 interface ActionDTOInterface
 {
