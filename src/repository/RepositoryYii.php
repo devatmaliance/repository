@@ -87,7 +87,7 @@ class RepositoryYii implements RepositoryInterface
 
             $model->setScenario(self::SCENARIO);
             $this->deleteModel($model);
-            $models[] = $fields[$searchParam];
+            $models[] = $fields;
         }
         return $this->actionDTO->getFields();
     }
@@ -114,8 +114,8 @@ class RepositoryYii implements RepositoryInterface
 
     private function assertSearchParamNotEmpty(array $fields): void
     {
-        if (!$this->isSearchParamExists($fields)) {
-            throw new \InvalidArgumentException('Отсутствует поле ' . $searchParam);
+        if (!$this->isSearchParamsExists($fields)) {
+            throw new \InvalidArgumentException('Один за параметров отсутствует в переданных полях');
         }
     }
 
@@ -124,10 +124,17 @@ class RepositoryYii implements RepositoryInterface
         return isset($this->repositoryEntity->entities()[$entity]);
     }
 
-    private function isSearchParamExists(array $fields): bool
+    private function isSearchParamsExists(array $fields): bool
     {
-        $searchParam = $this->getSearchParam();
-        return isset($fields[$searchParam]);
+        $searchParams = $this->getSearchParams();
+
+        foreach ($searchParams as $param) {
+            if (!isset($fields[$param])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -138,7 +145,7 @@ class RepositoryYii implements RepositoryInterface
         $this->assertSearchParamNotEmpty($fields);
         
         $classEntity = $this->getClassEntity();
-        $searchParam = $this->getSearchParam();
+        $searchParam = $this->getSearchParams();
 
         if (!$classEntity) {
             return null;
@@ -155,11 +162,11 @@ class RepositoryYii implements RepositoryInterface
     {
         $classEntity = $this->getClassEntity();
 
-        if (!$this->isSearchParamExists($fields)) {
+        if (!$this->isSearchParamsExists($fields)) {
             return false;
         }
 
-        $searchParam = $this->getSearchParam();
+        $searchParam = $this->getSearchParams();
 
         if (!$classEntity) {
             return false;
@@ -168,9 +175,9 @@ class RepositoryYii implements RepositoryInterface
         return $classEntity->find()->where([$searchParam => $fields[$searchParam]])->exists();
     }
 
-    private function getSearchParam(): string
+    private function getSearchParams(): array
     {
-        return $this->actionDTO->getSearchParam();
+        return $this->actionDTO->getSearchParams();
     }
 
     private function getClassEntity()
