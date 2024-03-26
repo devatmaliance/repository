@@ -26,22 +26,22 @@ class RepositoryYii implements RepositoryInterface
     {
         $entity = $this->actionDTO->getEntity();
 
-
-        if (!$classEntity = $this->repositoryEntity->entities()[$entity]) {
+        if (!$classEntity = $this->getClassEntity($entity)) {
             return $classEntity;
         }
+
         $models = [];
 
         foreach ($this->actionDTO->getFields() as $fields) {
-            $fields = $this->convertToArray($fields);
+            $attribites = $this->getTransformedAttributes($fields);
 
-            if ($this->isExistsModel($fields)) {
+            if ($this->isExistsModel($attribites)) {
                 continue;
             }
 
-            $model = new $classEntity($fields);
-            
+            $model = new $classEntity();
             $model->setScenario(self::SCENARIO);
+            $model->setAttributes($attribites, false);
             $this->saveModel($model);
             $models[] = $model->getAttributes();
         }
@@ -58,13 +58,15 @@ class RepositoryYii implements RepositoryInterface
         $models = [];
 
         foreach ($this->actionDTO->getFields() as $fields) {
-            $fields = $this->convertToArray($fields);
-            $model = $this->getModel($fields);
-            
-            if (!$model) continue;
+            $attribites = $this->getTransformedAttributes($fields);
+            $model = $this->getModel($attribites);
+
+            if (!$model) {
+                return $this->create();
+            }
 
             $model->setScenario(self::SCENARIO);
-            $model->setAttributes($fields);
+            $model->setAttributes($attribites, false);
             $this->saveModel($model);
             $models[] = $model->getAttributes();
         }
@@ -78,10 +80,10 @@ class RepositoryYii implements RepositoryInterface
     public function delete(): array
     {
         $models = [];
-        
+
         foreach ($this->actionDTO->getFields() as $fields) {
-            $fields = $this->convertToArray($fields);
-            $model = $this->getModel($fields);
+            $attribites = $this->getTransformedAttributes($fields);
+            $model = $this->getModel($attribites);
 
             if (!$model) continue;
 
@@ -89,7 +91,7 @@ class RepositoryYii implements RepositoryInterface
             $this->deleteModel($model);
             $models[] = $fields;
         }
-        return $this->actionDTO->getFields();
+        return $models;
     }
 
     /**
@@ -100,6 +102,12 @@ class RepositoryYii implements RepositoryInterface
         if (!$model->save(false)) {
             throw new Exception($model);
         }
+    }
+
+    private function getTransformedAttributes(array $fields): array
+    {
+        $fields = $this->convertToArray($fields);
+        return $this->convertArrayFieldToId($fields);
     }
 
     /**
@@ -115,7 +123,7 @@ class RepositoryYii implements RepositoryInterface
     private function assertSearchParamNotEmpty(array $fields): void
     {
         if (!$this->isSearchParamsExists($fields)) {
-            throw new \InvalidArgumentException('Один за параметров отсутствует в переданных полях');
+            throw new \InvalidArgumentException('Один из searchParams отсутствует в переданных полях');
         }
     }
 
@@ -137,42 +145,81 @@ class RepositoryYii implements RepositoryInterface
         return true;
     }
 
+    private function convertArrayFieldToId(array $fields): array
+    {
+        foreach ($fields as $name => $value) {
+            if (is_array($value)) {
+                $uuid = $value['uuid'];
+                $classEntity = $this->getClassEntity($value['entity']);
+                $model = $classEntity->findOne(['uuid' => $value['uuid']]);
+
+                if (!$model) {
+                    throw new \Exception("Для поля $name по uuid $uuid модель не найдена");
+                }
+
+                $fields[$name] = $model->primaryKey;
+            }
+        }
+
+        return $fields;
+    }
+
     /**
      * @throws Exception
      */
     private function getModel(array $fields)
     {
         $this->assertSearchParamNotEmpty($fields);
-        
-        $classEntity = $this->getClassEntity();
-        $searchParam = $this->getSearchParams();
+        $entity = $this->actionDTO->getEntity();
+        $classEntity = $this->getClassEntity($entity);
+        $searchParams = $this->getSearchParams();
 
         if (!$classEntity) {
             return null;
         }
 
-        if (!$model = $classEntity->findOne([$searchParam => $fields[$searchParam]])) {
-            return null; 
+        $query = $this->getQuery($searchParams, $fields, $classEntity);
+
+        if (!$model = $query->one()) {
+            return null;
         }
 
         return $model;
     }
 
+    private function getQuery(array $searchParams, array $fields, $classEntity)
+    {
+        if (count($searchParams) === 1) {
+            $query = $classEntity::find()->andWhere([$searchParams[0] => $fields[$searchParams[0]]]);
+        } else {
+            $query = $classEntity::find();
+
+            foreach ($searchParams as $param) {
+                $query->andWhere([$param => $fields[$param]]);
+            }
+        }
+
+        return $query;
+    }
+
     private function isExistsModel(array $fields): bool
     {
-        $classEntity = $this->getClassEntity();
+        $entity = $this->actionDTO->getEntity();
+        $classEntity = $this->getClassEntity($entity);
 
         if (!$this->isSearchParamsExists($fields)) {
             return false;
         }
 
-        $searchParam = $this->getSearchParams();
+        $searchParams = $this->getSearchParams();
 
         if (!$classEntity) {
             return false;
         }
 
-        return $classEntity->find()->where([$searchParam => $fields[$searchParam]])->exists();
+        $query = $this->getQuery($searchParams, $fields, $classEntity);
+
+        return $query->exists();
     }
 
     private function getSearchParams(): array
@@ -180,10 +227,8 @@ class RepositoryYii implements RepositoryInterface
         return $this->actionDTO->getSearchParams();
     }
 
-    private function getClassEntity()
+    private function getClassEntity(string $entity)
     {
-        $entity = $this->actionDTO->getEntity();
-
         if (!$this->isEntityExists($entity)) {
             return null;
         }

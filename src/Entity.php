@@ -725,6 +725,7 @@ class Entity
             self::DEVICEMODELOWNER,
             self::DEVICEPARTNUMBERFILE,
             self::OWNER,
+            self::COMMUNICATIONTYPE
         ];
     }
 
