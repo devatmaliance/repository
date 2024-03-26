@@ -104,7 +104,7 @@ class RepositoryYii implements RepositoryInterface
         }
     }
 
-    private function getTransformedAttributes(array $fields): array
+    private function getTransformedAttributes($fields): array
     {
         $fields = $this->convertToArray($fields);
         return $this->convertArrayFieldToId($fields);
