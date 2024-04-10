@@ -238,6 +238,10 @@ class RepositoryYii implements RepositoryInterface
 
     private function convertToArray($fields): array
     {
-        return json_decode(json_encode($fields), true);
+        $fields = json_decode(json_encode($fields), true);
+       
+        return array_filter($fields, function ($field) {
+            return $field !== null;
+        });
     }
 }
