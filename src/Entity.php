@@ -363,6 +363,8 @@ class Entity
     public const DEVICEPARTNUMBERFILE = 'devicepartnumberfile';
     public const OWNER = 'owner';
     public const COMMUNICATIONTYPE = 'communicationtype';
+    public const CONSUMABLEMODEL = 'consumablemodel';
+
     
     public static function getEntities(): array
     {
@@ -725,7 +727,8 @@ class Entity
             self::DEVICEMODELOWNER,
             self::DEVICEPARTNUMBERFILE,
             self::OWNER,
-            self::COMMUNICATIONTYPE
+            self::COMMUNICATIONTYPE,
+            self::CONSUMABLEMODEL
         ];
     }
 
